@@ -15,6 +15,4 @@ script:
 
 after_success:
   - codecov
-
-deploy:
-  chalice deploy
+  - chalice deploy
