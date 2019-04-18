@@ -93,3 +93,33 @@ class TestApp(TestCase):
         res = model.HayMsg.from_json(response['body'])
         self.assertEqual(response['statusCode'], 200)
         self.assertEqual(res, mock)
+
+    def test_combo(self):
+        # pre save
+        s3 = boto3.client('s3', region_name='us-east-1')
+        pre_img = model.Image(
+            msg_id='1234', img_id='12345', img='asdfasdfasdf', width=10, height=20, timestamp='123123'
+        )
+        pre_msg = pre_img.put_by_id(s3, BUCKET)
+        print(pre_msg)
+
+        test_hay = model.HayMsg()
+        new_img = model.Image(
+            msg_id='1234', img_id='125', img='asdfasdfasdf', width=10, height=20, timestamp='123123'
+        )
+        new_req = model.Message(
+            msg_id='1234', img_id=pre_msg.img_id, msg='Get image', timestamp='12312314'
+        )
+        test_hay.add_msg(new_img)
+        test_hay.add_msg(new_req)
+
+        response = self.lg.handle_request(
+            method='POST',
+            path='/img',
+            headers={},
+            body=test_hay.to_json()
+        )
+
+        res_hay = model.HayMsg.from_json(response['body'])
+        self.assertTrue(isinstance(res_hay[0], model.Message))
+        self.assertTrue(isinstance(res_hay[1], model.Image))

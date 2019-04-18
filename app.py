@@ -42,19 +42,18 @@ def put_image():
     response = HayMsg()
     body = app.current_request.raw_body.decode()
     hayimg = HayMsg.from_json(body)
-
     for msg in hayimg.messages:
-        new_id = str(uuid.uuid4())
-        while not check_id_available(new_id, BUCKET, s3):
-            new_id = str(uuid.uuid4())
-        msg.img_id = new_id
-
         if isinstance(msg, Image):
+            new_id = str(uuid.uuid4())
+            while not check_id_available(new_id, BUCKET, s3):
+                new_id = str(uuid.uuid4())
+            msg.img_id = new_id
+
             new_m = msg.put_by_id(s3, BUCKET, new_id)
             response.add_msg(new_m)
-        # elif isinstance(msg, Message):
-        #     img = Image.get_by_id(s3, BUCKET, msg.id)
-        #     response.add_msg(img)
+        elif isinstance(msg, Message):
+            img = Image.get_by_id(s3, BUCKET, msg.msg_id, msg.img_id)
+            response.add_msg(img)
         else:
             err = Error(msg.msg_id, msg.img_id, 'Wrong Message', time.time())
             response.add_msg(err)
