@@ -38,7 +38,7 @@ class TestApp(TestCase):
             body=''
         )
         new_hay = model.HayMsg.from_json(response['body'])
-        assert new_hay == test_hay
+        self.assertEqual(new_hay, test_hay)
 
     def test_get_non_exist(self):
         response = self.lg.handle_request(
@@ -55,7 +55,7 @@ class TestApp(TestCase):
         )
         res_hay = model.HayMsg()
         res_hay.add_msg(err)
-        assert res_hay == new_hay
+        self.assertEqual(res_hay, new_hay)
 
     def test_put_image(self):
         new_img = model.Image(
@@ -71,8 +71,14 @@ class TestApp(TestCase):
             body=test_hay.to_json()
         )
 
-        assert response['statusCode'] == 200
-        print(response['body'])
+        res_hay = model.HayMsg.from_json(response['body'])
+
+        s3 = boto3.client('s3', region_name='us-east-1')
+        target = model.Image.get_by_id(s3, BUCKET, '1234', res_hay[0].img_id)
+        tar_hay = model.HayMsg()
+        tar_hay.add_msg(target)
+        self.assertEqual(response['statusCode'], 200)
+        self.assertEqual(tar_hay, test_hay)
 
     def test_hello(self):
         response = self.lg.handle_request(
@@ -85,5 +91,5 @@ class TestApp(TestCase):
         mock = model.HayMsg()
         mock.add_msg(message)
         res = model.HayMsg.from_json(response['body'])
-        assert response['statusCode'] == 200
-        assert res == mock
+        self.assertEqual(response['statusCode'], 200)
+        self.assertEqual(res, mock)

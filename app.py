@@ -47,7 +47,7 @@ def put_image():
         new_id = str(uuid.uuid4())
         while not check_id_available(new_id, BUCKET, s3):
             new_id = str(uuid.uuid4())
-        msg.id = new_id
+        msg.img_id = new_id
 
         if isinstance(msg, Image):
             new_m = msg.put_by_id(s3, BUCKET, new_id)
