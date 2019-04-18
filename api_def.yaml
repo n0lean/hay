@@ -1,0 +1,121 @@
+openapi: 3.0.1
+info:
+  title: Hay Image S3 Wrapper
+  version: 1.0.0
+servers:
+- url: /
+paths:
+  /img/{img_id}:
+    get:
+      tags:
+      - IMG
+      summary: get image.
+      parameters:
+      - name: img_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: A success saving
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HayMsg'
+        403:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /img:
+    post:
+      tags:
+      - IMG
+      summary: save image.
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/HayMsg'
+        required: true
+      responses:
+        200:
+          description: A success saving
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HayMsg'
+        403:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    Request:
+      type: object
+      properties:
+        msg_id:
+          type: string
+        img_id:
+          type: string
+        msg:
+          type: string
+        timestamp:
+          type: string
+          format: datetime
+    Error:
+      type: object
+      properties:
+        msg_id:
+          type: string
+        img_id:
+          type: string
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        timestamp:
+          type: string
+    Image:
+      type: object
+      properties:
+        msg_id:
+          type: string
+        img_id:
+          type: string
+        img:
+          type: string
+        timestamp:
+          type: string
+          format: datetime
+        widht:
+          type: integer
+        height:
+          type: integer
+    HayMsg:
+      type: object
+      properties:
+        messages:
+          type: array
+          items:
+            anyOf:
+              - $ref: '#/components/schemas/Error'
+              - $ref: '#/components/schemas/Request'
+              - $ref: '#/components/schemas/Image'

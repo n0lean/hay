@@ -4,76 +4,63 @@ from chalicelib.model import *
 import boto3
 from botocore.exceptions import ClientError
 from botocore.vendored import requests
-from chalice import NotFoundError
+from chalicelib.utils.aws_util import check_id_available
 import logging
+import uuid
+
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 app = Chalice(app_name='hay')
-s3 = boto3.client('s3', region_name='us-west-1')
+
 BUCKET = 'cloudphoto-hay'
-
-
-def build_success_message(_id, msg_str, timestamp):
-    msg = Message(_id, msg_str, timestamp)
-    obj = HayMsg()
-    obj.add_msg(msg)
-    return obj
-
-
-def build_error_message(code, err):
-    response = HayMsg()
-    msg = Error(code, err)
-    response.add_msg(msg)
-    return response
 
 
 @app.route('/hello', methods=['GET'])
 def hello():
     messages = HayMsg()
-    msg = Message('123', 'hello world!', str(time.time()))
+    msg = Message(
+        msg_id='123', img_id='123', msg='hello world!', timestamp=str(time.time())
+    )
     messages.add_msg(msg)
-    return messages.to_json_str()
+    return messages.to_json()
 
 
 @app.route('/img/{img_id}', methods=['GET'])
 def get_image(img_id):
-    response = HayImg()
-    try:
-        obj = s3.get_object(
-            Bucket=BUCKET,
-            Key=img_id,
-        )
-        ss = obj['Body'].read().decode('utf-8')
-        js = json.loads(ss)
-        img = Image.from_json(js)
-        response.add_image(img)
-    except KeyError as e:
-        raise e
-    except NotFoundError as e:
-        logging.error('NotFoundError' + str(e))
-        response = HayMsg()
-        err = Error('-1', 'Exception: ' + str(e))
-        response.add_msg(err)
-        return response.to_json_str()
-    return response.to_json_str()
+    s3 = boto3.client('s3', region_name='us-east-1')
+    response = HayMsg()
+    msg_id = str(uuid.uuid4())
+    img = Image.get_by_id(s3, BUCKET, msg_id=msg_id, img_id=img_id)
+    response.add_msg(img)
+    return response.to_json()
 
 
 @app.route('/img', methods=['POST'])
-def save_image():
-    body = app.current_request.json_body
-    hayimg = HayImg.from_json(body)
+def put_image():
+    s3 = boto3.client('s3', region_name='us-east-1')
     response = HayMsg()
-    for img in hayimg.images:
-        try:
-            s3.put_object(
-                Bucket=BUCKET,
-                Key=img.id,
-                Body=img.to_json_str()
-            )
-            msg = Message(img.id, 'success', str(time.time()))
-            response.add_msg(msg)
-        except KeyError as e:
-            err = Error('-1', 'Exception: ' + str(e))
+    body = app.current_request.raw_body.decode()
+    hayimg = HayMsg.from_json(body)
+
+    for msg in hayimg.messages:
+        new_id = str(uuid.uuid4())
+        while not check_id_available(new_id, BUCKET, s3):
+            new_id = str(uuid.uuid4())
+        msg.id = new_id
+
+        if isinstance(msg, Image):
+            new_m = msg.put_by_id(s3, BUCKET, new_id)
+            response.add_msg(new_m)
+        # elif isinstance(msg, Message):
+        #     img = Image.get_by_id(s3, BUCKET, msg.id)
+        #     response.add_msg(img)
+        else:
+            err = Error(msg.msg_id, msg.img_id, 'Wrong Message', time.time())
             response.add_msg(err)
-    return response.to_json_str()
+    return response.to_json()
+
+
+@app.route('/img', methods=['DELETE'])
+def delete_image():
+    pass

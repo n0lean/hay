@@ -1,82 +1,142 @@
 import json
+import time
+from botocore.exceptions import ClientError
+import logging
 
 
 class Image(object):
-    def __init__(self, _id, img, width, height, timestamp):
-        self.id = _id
+    def __init__(self, msg_id, img_id, img, width, height, timestamp):
+        self.msg_id = msg_id
+        self.img_id = img_id
         self.img = img
         self.width = int(width)
         self.height = int(height)
         self.timestamp = timestamp
 
     def __str__(self):
-        return '[IMAGE] id: {}, time: {}, width: {}, height: {}'.format(
-            self.id, self.timestamp, self.width, self.height
+        return '[IMAGE] msg_id: {}, img_id: {}, time: {}, width: {}, height: {}'.format(
+            self.msg_id, self.img_id, self.timestamp, self.width, self.height
         )
 
+    def to_dict(self):
+        d = {key: val for key, val in self.__dict__.items()}
+        d['Schema'] = 'Image'
+        return d
+
     def to_json(self):
-        return {
-            key: val for key, val in self.__dict__.items()
-        }
-
-    def to_json_str(self):
-        return json.dumps(self.to_json())
+        return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, d):
-        return cls(d['id'], d['img'], d['width'], d['height'], d['timestamp'])
+    def from_dict(cls, d):
+        return cls(d['msg_id'], d['img_id'], d['img'], d['width'], d['height'], d['timestamp'])
 
     @classmethod
-    def from_json_str(cls, s):
+    def from_json(cls, s):
         d = json.loads(s)
-        return cls.from_json(d)
+        return cls.from_dict(d)
 
     def __eq__(self, other):
-        return self.id == other.id and self.img == other.img and \
-               self.width == other.width and self.height == other.height and \
-               self.timestamp == other.timestamp
+        if type(other) != type(self):
+            return False
+
+        return self.msg_id == other.msg_id and \
+               self.img == other.img and self.width == other.width and \
+               self.height == other.height and self.img_id == self.img_id
+
+    def put_by_id(self, s3, bucket, key=None):
+        try:
+            s3.put_object(
+                Bucket=bucket,
+                Key=key if key is not None else self.img_id,
+                Body=self.to_json()
+            )
+            msg = Message(self.msg_id, self.img_id, 'success', str(time.time()))
+        except ClientError as e:
+            msg = Error(self.msg_id, self.img_id, e.response['Error']['Code'], str(time.time()))
+            logging.error(msg)
+        return msg
+
+    @classmethod
+    def get_by_id(cls, s3, bucket, msg_id, img_id):
+        try:
+            obj = s3.get_object(
+                Bucket=bucket,
+                Key=img_id,
+            )
+            ss = obj['Body'].read().decode('utf-8')
+            js = json.loads(ss)
+            obj = cls.from_dict(js)
+        except ClientError as e:
+            if e.response['Error']['Code'] == 'NoSuchKey':
+                logging.error(e)
+                obj = Error(msg_id, img_id, 'NoSuchKey', time.time())
+            else:
+                raise e
+        return obj
 
 
 class Message(object):
-    def __init__(self, _id, msg, timestamp):
-        self.id = _id
+    def __init__(self, msg_id, img_id, msg, timestamp):
+        self.msg_id = msg_id
+        self.img_id = img_id
         self.msg = msg
         self.timestamp = timestamp
 
     def __str__(self):
-        return '[MESSAGE] id: {}, time: {}, msg: {}'.format(self.id, self.timestamp, self.msg)
+        return '[MESSAGE] msg_id: {}, img_id: {}, time: {}, msg: {}'.format(
+            self.msg_id, self.img_id, self.timestamp, self.msg
+        )
+
+    def to_dict(self):
+        d = {key: val for key, val in self.__dict__.items()}
+        d['Schema'] = 'Message'
+        return d
 
     def to_json(self):
-        return {
-            key: val for key, val in self.__dict__.items()
-        }
-
-    def to_json_str(self):
-        return json.dumps(self.to_json())
+        return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, d):
-        return cls(d['id'], d['msg'], d['timestamp'])
+    def from_dict(cls, d):
+        return cls(d['msg_id'], d['img_id'], d['msg'], d['timestamp'])
 
     def __eq__(self, other):
-        return self.id == other.id and self.msg == other.msg and self.timestamp == other.timestamp
+        if type(other) != type(self):
+            return False
+        return self.msg_id == other.msg_id and self.img_id == other.img_id and self.msg == other.msg
+
+    @classmethod
+    def build_success_message(cls, msg_id, img_id):
+        return cls(msg_id, img_id, 'success', time.time())
 
 
 class Error(object):
-    def __init__(self, code, msg):
-        self.code = code
+    def __init__(self, msg_id, img_id, msg, timestamp):
+        self.img_id = img_id
         self.msg = msg
+        self.msg_id = msg_id
+        self.timestamp = timestamp
 
     def __str__(self):
-        return '[ERROR] code: {}, msg: {}'.format(self.code, self.msg)
+        return '[ERROR] msg_id: {}, img_id:{}, msg: {}, time: {}'.format(
+            self.msg_id, self.img_id, self.msg, self.timestamp
+        )
+
+    def to_dict(self):
+        d = {key: val for key, val in self.__dict__.items()}
+        d['Schema'] = 'Error'
+        return d
 
     def to_json(self):
-        return {
-            key: str(val) for key, val in self.__dict__.items()
-        }
+        return json.dumps(self.to_dict())
 
-    def to_json_str(self):
-        return json.dumps(self.to_json())
+    @classmethod
+    def from_dict(cls, d):
+        return cls(d['msg_id'], d['img_id'], d['msg'], d['timestamp'])
+
+    def __eq__(self, other):
+        if type(other) != type(self):
+            return False
+        return self.msg_id == other.msg_id and self.img_id == other.img_id and self.msg == other.msg
 
 
 class HayMsg(object):
@@ -92,23 +152,42 @@ class HayMsg(object):
     def __str__(self):
         return '\n'.join(['[HayMSG]: '] + ['  ' + str(i) for i in self.messages])
 
-    def to_json(self):
-        return {'messages': [msg.to_json() for msg in self.messages]}
+    def to_dict(self):
+        return {'messages': [msg.to_dict() for msg in self.messages]}
 
-    def to_json_str(self):
-        return json.dumps(self.to_json())
+    def to_json(self):
+        return json.dumps(self.to_dict())
+
+    @staticmethod
+    def construct_obj(d):
+        if d['Schema'] == 'Message':
+            return Message.from_dict(d)
+        elif d['Schema'] == 'Error':
+            return Error.from_dict(d)
+        elif d['Schema'] == 'Image':
+            return Image.from_dict(d)
+        else:
+            raise NotImplementedError('Not support this type.')
 
     @classmethod
-    def from_json(cls, d):
+    def from_dict(cls, d):
         obj = cls()
         for col in d['messages']:
-            obj.messages.append(Message.from_json(col))
+            obj.messages.append(cls.construct_obj(col))
         return obj
+
+    @classmethod
+    def from_json(cls, j):
+        d = json.loads(j)
+        return cls.from_dict(d)
 
     def __len__(self):
         return len(self.messages)
 
     def __eq__(self, other):
+        if type(other) != type(self):
+            return False
+
         if len(self.messages) != len(other):
             return False
 
@@ -117,41 +196,5 @@ class HayMsg(object):
                 return False
         return True
 
-
-class HayImg(object):
-    def __init__(self):
-        self.images = []
-
-    def add_image(self, img):
-        self.images.append(img)
-
-    def add_images(self, imgs):
-        self.images.extend(imgs)
-
-    def __str__(self):
-        return '\n'.join(['[HayIMG]: '] + ['  ' + str(i) for i in self.images])
-
-    def to_json(self):
-        return {'messages': [msg.to_json() for msg in self.images]}
-
-    def to_json_str(self):
-        return json.dumps(self.to_json())
-
-    def __len__(self):
-        return len(self.images)
-
-    @classmethod
-    def from_json(cls, d):
-        obj = cls()
-        for col in d['messages']:
-            obj.images.append(Image.from_json(col))
-        return obj
-
-    def __eq__(self, other):
-        if len(self.images) != len(other):
-            return False
-
-        for a, b in zip(self.images, other.images):
-            if a != b:
-                return False
-        return True
+    def __getitem__(self, item):
+        return self.messages[item]
