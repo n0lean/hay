@@ -13,7 +13,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 app = Chalice(app_name='hay')
 
-BUCKET = 'cloudphoto-hay'
+BUCKET = 'anda-bucket-cloudphoto-app'
 
 
 @app.route('/hello', methods=['GET'])
