@@ -8,7 +8,7 @@ import boto3
 import json
 
 
-BUCKET = 'cloudphoto-hay'
+BUCKET = 'anda-bucket-cloudphoto-app'
 
 
 class TestApp(TestCase):
