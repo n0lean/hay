@@ -126,7 +126,7 @@ class TestApp(TestCase):
         self.assertTrue(isinstance(res_hay[1], model.Image))
 
     def test_local_img(self):
-        path = './test_img.jpg'
+        path = './test/test_img.jpg'
         with open(path, 'rb') as f:
             b64_f = base64.b64encode(f.read()).decode('ascii')
         haymsg = model.HayMsg()

@@ -29,7 +29,7 @@ class TestModel(unittest.TestCase):
         assert new_imgs == imgs
 
     def test_local_img(self):
-        path = './test_img.jpg'
+        path = './test/test_img.jpg'
         with open(path, 'rb') as f:
             b64_f = base64.b64encode(f.read()).decode('ascii')
         haymsg = HayMsg()
