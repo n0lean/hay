@@ -7,7 +7,7 @@ def check_id_available(img_id, bucket, s3):
     try:
         s3.head_object(Bucket=bucket, Key=img_id)
     except ClientError as e:
-        if e.response['Error']['Code'] == '404':
+        if e.response['Error']['Code'] == '404' and e.response['Error']['Code'] == '403':
             logging.debug('Not Found img_id' + str(img_id))
             logging.debug(e.response['Error']['Code'])
             return True

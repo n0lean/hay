@@ -45,8 +45,8 @@ def put_image():
     for msg in hayimg.messages:
         if isinstance(msg, Image):
             new_id = str(uuid.uuid4())
-            while not check_id_available(new_id, BUCKET, s3):
-                new_id = str(uuid.uuid4())
+            # while not check_id_available(new_id, BUCKET, s3):
+            #     new_id = str(uuid.uuid4())
             msg.img_id = new_id
 
             new_m = msg.put_by_id(s3, BUCKET, new_id)

@@ -6,6 +6,8 @@ from app import app
 from moto import mock_s3
 import boto3
 import json
+import base64
+import time
 
 
 BUCKET = 'anda-bucket-cloudphoto-app'
@@ -101,7 +103,6 @@ class TestApp(TestCase):
             msg_id='1234', img_id='12345', img='asdfasdfasdf', width=10, height=20, timestamp='123123'
         )
         pre_msg = pre_img.put_by_id(s3, BUCKET)
-        print(pre_msg)
 
         test_hay = model.HayMsg()
         new_img = model.Image(
@@ -123,3 +124,22 @@ class TestApp(TestCase):
         res_hay = model.HayMsg.from_json(response['body'])
         self.assertTrue(isinstance(res_hay[0], model.Message))
         self.assertTrue(isinstance(res_hay[1], model.Image))
+
+    def test_local_img(self):
+        path = './test_img.jpg'
+        with open(path, 'rb') as f:
+            b64_f = base64.b64encode(f.read()).decode('ascii')
+        haymsg = model.HayMsg()
+        img = model.Image('test_msg', 'image_test', b64_f, 10, 10, str(time.time()))
+        haymsg.add_msg(img)
+
+        response = self.lg.handle_request(
+            method='POST',
+            path='/img',
+            headers={},
+            body=haymsg.to_json()
+        )
+
+        res_hay = model.HayMsg.from_json(response['body'])
+        print(res_hay.to_json())
+        self.assertTrue(isinstance(res_hay[0], model.Message))
