@@ -4,8 +4,7 @@
   "stages": {
     "dev": {
       "api_gateway_stage": "v01",
-      "manage_iam_role": false,
-      "iam_role_arn": "arn:aws:iam::370740074467:user/hay-admin"
+      "manage_iam_role": false
     }
   }
 }

@@ -11,6 +11,9 @@ install:
   - pip install codecov
   - pip install coverage
 
+before_script:
+  - python before_script.py
+
 script:
   - coverage run -m unittest discover
 
