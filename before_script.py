@@ -7,5 +7,5 @@ if __name__ == '__main__':
         d = json.load(f)
     d['stages']['dev']['manage_iam_role'] = False
     d['stages']['dev']['iam_role_arn'] = os.environ['iam_role_arn']
-    with open('./chalice/config.json', 'w') as f:
+    with open('./.chalice/config.json', 'w') as f:
         json.dump(d, f)
