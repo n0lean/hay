@@ -2,6 +2,7 @@ import json
 import time
 from botocore.exceptions import ClientError
 import logging
+import base64
 
 
 class Image(object):
@@ -45,10 +46,13 @@ class Image(object):
 
     def put_by_id(self, s3, bucket, key=None):
         try:
+            t = self.img.encode('ascii')
+            bin_img = base64.b64decode(t)
+
             s3.put_object(
                 Bucket=bucket,
                 Key=key if key is not None else self.img_id,
-                Body=self.to_json()
+                Body=bin_img
             )
             msg = Message(self.msg_id, self.img_id, 'success', str(time.time()))
         except ClientError as e:
@@ -56,23 +60,23 @@ class Image(object):
             logging.error(msg)
         return msg
 
-    @classmethod
-    def get_by_id(cls, s3, bucket, msg_id, img_id):
-        try:
-            obj = s3.get_object(
-                Bucket=bucket,
-                Key=img_id,
-            )
-            ss = obj['Body'].read().decode('utf-8')
-            js = json.loads(ss)
-            obj = cls.from_dict(js)
-        except ClientError as e:
-            if e.response['Error']['Code'] == 'NoSuchKey':
-                logging.error(e)
-                obj = Error(msg_id, img_id, 'NoSuchKey', time.time())
-            else:
-                raise e
-        return obj
+    # @classmethod
+    # def get_by_id(cls, s3, bucket, msg_id, img_id):
+    #     try:
+    #         obj = s3.get_object(
+    #             Bucket=bucket,
+    #             Key=img_id,
+    #         )
+    #         ss = obj['Body'].read().decode('utf-8')
+    #         js = json.loads(ss)
+    #         obj = cls.from_dict(js)
+    #     except ClientError as e:
+    #         if e.response['Error']['Code'] == 'NoSuchKey':
+    #             logging.error(e)
+    #             obj = Error(msg_id, img_id, 'NoSuchKey', time.time())
+    #         else:
+    #             raise e
+    #     return obj
 
 
 class Message(object):
@@ -164,8 +168,8 @@ class HayMsg(object):
             return Message.from_dict(d)
         elif d['Schema'] == 'Error':
             return Error.from_dict(d)
-        elif d['Schema'] == 'Image':
-            return Image.from_dict(d)
+        # elif d['Schema'] == 'Image':
+        #     return Image.from_dict(d)
         else:
             raise NotImplementedError('Not support this type.')
 

@@ -7,6 +7,7 @@ from botocore.vendored import requests
 from chalicelib.utils.aws_util import check_id_available
 import logging
 import uuid
+import base64
 
 
 logger = logging.getLogger()
@@ -26,14 +27,14 @@ def hello():
     return messages.to_json()
 
 
-@app.route('/img/{img_id}', methods=['GET'])
-def get_image(img_id):
-    s3 = boto3.client('s3', region_name='us-east-1')
-    response = HayMsg()
-    msg_id = str(uuid.uuid4())
-    img = Image.get_by_id(s3, BUCKET, msg_id=msg_id, img_id=img_id)
-    response.add_msg(img)
-    return response.to_json()
+# @app.route('/img/{img_id}', methods=['GET'])
+# def get_image(img_id):
+#     s3 = boto3.client('s3', region_name='us-east-1')
+#     response = HayMsg()
+#     msg_id = str(uuid.uuid4())
+#     img = Image.get_by_id(s3, BUCKET, msg_id=msg_id, img_id=img_id)
+#     response.add_msg(img)
+#     return response.to_json()
 
 
 @app.route('/img', methods=['POST'])
@@ -59,7 +60,7 @@ def put_image():
             response.add_msg(err)
     return response.to_json()
 
-
-@app.route('/img', methods=['DELETE'])
-def delete_image():
-    pass
+#
+# @app.route('/img', methods=['DELETE'])
+# def delete_image():
+#     pass

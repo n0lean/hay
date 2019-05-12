@@ -19,24 +19,24 @@ class S3Test(unittest.TestCase):
     def tearDown(self):
         self.mock.stop()
 
-    def test_image(self):
-        img = Image('123', '123', 'asdfasdfasdf', 10, 20, time.time())
-
-        s3 = boto3.client('s3', region_name='us-east-1')
-        img.put_by_id(s3, BUCKET, None)
-
-        new_img = Image.get_by_id(s3, BUCKET, img.msg_id, img.img_id)
-
-        assert img == new_img
-
-    def test_not_found(self):
-        img = Image('123', '123', 'asdfasdfasdf', 10, 20, time.time())
-
-        s3 = boto3.client('s3', region_name='us-east-1')
-        img.put_by_id(s3, BUCKET, None)
-
-        target_id = '12345'
-        new_img = Image.get_by_id(s3, BUCKET, '123', target_id)
-        expected = Error('123', target_id, 'NoSuchKey', new_img.timestamp)
-        assert expected == new_img
+    # def test_image(self):
+    #     img = Image('123', '123', 'asdfasdfasdf', 10, 20, time.time())
+    #
+    #     s3 = boto3.client('s3', region_name='us-east-1')
+    #     img.put_by_id(s3, BUCKET, None)
+    #
+    #     new_img = Image.get_by_id(s3, BUCKET, img.msg_id, img.img_id)
+    #
+    #     assert img == new_img
+    #
+    # def test_not_found(self):
+    #     img = Image('123', '123', 'asdfasdfasdf', 10, 20, time.time())
+    #
+    #     s3 = boto3.client('s3', region_name='us-east-1')
+    #     img.put_by_id(s3, BUCKET, None)
+    #
+    #     target_id = '12345'
+    #     new_img = Image.get_by_id(s3, BUCKET, '123', target_id)
+    #     expected = Error('123', target_id, 'NoSuchKey', new_img.timestamp)
+    #     assert expected == new_img
 
