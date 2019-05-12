@@ -28,15 +28,15 @@ class TestModel(unittest.TestCase):
         new_imgs = HayMsg.from_dict(d)
         assert new_imgs == imgs
 
-    def test_local_img(self):
-        path = './test_img2.jpg'
-        with open(path, 'rb') as f:
-            b64_f = base64.b64encode(f.read()).decode('ascii')
-        haymsg = HayMsg()
-        img = Image('test_msg', 'image_test', b64_f, 10, 10, str(time.time()))
-        haymsg.add_msg(img)
-        js = haymsg.to_json()
-        print(js)
-        newmsg = HayMsg.from_json(js)
-
-        self.assertEqual(newmsg, haymsg)
+    # def test_local_img(self):
+    #     path = './test_img2.jpg'
+    #     with open(path, 'rb') as f:
+    #         b64_f = base64.b64encode(f.read()).decode('ascii')
+    #     haymsg = HayMsg()
+    #     img = Image('test_msg', 'image_test', b64_f, 10, 10, str(time.time()))
+    #     haymsg.add_msg(img)
+    #     js = haymsg.to_json()
+    #     print(js)
+    #     newmsg = HayMsg.from_json(js)
+    #
+    #     self.assertEqual(newmsg, haymsg)
