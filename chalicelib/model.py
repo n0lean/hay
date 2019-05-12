@@ -168,8 +168,8 @@ class HayMsg(object):
             return Message.from_dict(d)
         elif d['Schema'] == 'Error':
             return Error.from_dict(d)
-        # elif d['Schema'] == 'Image':
-        #     return Image.from_dict(d)
+        elif d['Schema'] == 'Image':
+            return Image.from_dict(d)
         else:
             raise NotImplementedError('Not support this type.')
 

@@ -3,6 +3,7 @@ import unittest
 import boto3
 import time
 from chalicelib.model import Image, Message, Error
+import base64
 
 
 BUCKET = 'bucket_name'
@@ -20,15 +21,17 @@ class S3Test(unittest.TestCase):
         self.mock.stop()
 
     # def test_image(self):
-    #     img = Image('123', '123', 'asdfasdfasdf', 10, 20, time.time())
+    #     path = './test/test_img.jpg'
+    #     with open(path, 'rb') as f:
+    #         b64_f = base64.b64encode(f.read()).decode('ascii')
+    #     img = Image('test_msg', 'image_test', b64_f, 10, 10, str(time.time()))
     #
     #     s3 = boto3.client('s3', region_name='us-east-1')
     #     img.put_by_id(s3, BUCKET, None)
-    #
-    #     new_img = Image.get_by_id(s3, BUCKET, img.msg_id, img.img_id)
-    #
-    #     assert img == new_img
-    #
+
+        # new_img = Image.get_by_id(s3, BUCKET, img.msg_id, img.img_id)
+
+
     # def test_not_found(self):
     #     img = Image('123', '123', 'asdfasdfasdf', 10, 20, time.time())
     #
